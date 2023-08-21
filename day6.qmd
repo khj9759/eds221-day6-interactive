@@ -4,4 +4,41 @@ format: html
 editor: visual
 ---
 
-## 
+```{r}
+library(tidyverse)
+library(here)
+library(janitor)
+```
+
+```{r}
+wb_indicators <- read_csv(here("data","wb_indicators.csv"), na=c("..",""))
+```
+
+```{r}
+wb_indicators_long <- wb_indicators %>%
+  pivot_longer(cols = `2001 [YR2001]`:`2020 [YR2020]`, names_to = 'year', values_to = 'indicator_value')
+```
+
+```{r}
+wb_indicators_clean <- wb_indicators_long %>%
+  separate(col="year", into = c("year", "year_chr"), sep = " ") %>%
+  dplyr::select(-year_chr, -`Country Code`, -`Series Code`) # get rid of those code for clearance
+```
+
+```{r}
+wb_indicators_tidy <- wb_indicators_clean %>%
+  drop_na(`Series Name`) %>%
+  pivot_wider(names_from = `Series Name`, values_from = indicator_value) %>%
+#  dplyr::rename(country = "Country Name", access_fuels_pp = "Access to clean fuels and technologies... " ) # new name = old name
+  mutate(year = as.numeric(year))
+```
+
+```{r}
+names(wb_indicators_tidy) <- c("country", "year", "access_clean_fuels_pp", "access_electricity_pp","co2_emission_kt", "fossil_fuel_cons_pt","water_stress")
+```
+
+```{r}
+ggplot(wb_indicators_tidy, aes(x=year, y=co2_emission_kt)) +
+  geom_line(aes(color = country)) +
+  theme(legend.position="none") 
+```
